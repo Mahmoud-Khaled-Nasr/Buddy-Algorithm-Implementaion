@@ -6,7 +6,9 @@
 
 using namespace std;
 
-const string INPUT_FILE_NAME = "input.txt";
+#define INPUT_FILE_NAME "input.txt"
+#define LOG_FILE_NAME "log.txt"
+
 
 queue<process> read_input_file(int &quanta, int &switch_time, string file_name, buddy* memory) {
 	ifstream in;
@@ -45,31 +47,80 @@ void add_new_processes_to_ready_queue(int time, queue<process> &all_process, que
 			all_process.pop();
 		}
 	}
-
-
-
 }
 
 
+void print_queue(queue<process> q) {
+	ofstream out;
+	out.open(LOG_FILE_NAME, fstream::app);
+	if (!out.is_open()) {
+		cout << "The log file can't be opened\n";
+		exit(1);
+	}
+	out << "Queue:";
+	while (! q.empty()) {
+		out << " " << q.front().id;
+		q.pop();
+		if (q.size() != 0) {
+			out << ",";
+		}
+	}
+	out << endl;
+	out.close();
+}
+
+int switching(int counter, int switch_time) {
+	//the + 1 is to keep the output the same as the example
+	ofstream out;
+	out.open(LOG_FILE_NAME, fstream::app);
+	counter++;
+	out << "Process switching\t: started at " << counter;
+	counter += switch_time;
+	out << ",\tfinished at " << counter << endl;
+	out.close();
+	//To make the next process starts from the next sec 
+	counter++;
+	return counter;
+}
+
+void open_log_file() {
+	//open the log file
+	ofstream out;
+	out.open(LOG_FILE_NAME);
+	if (!out.is_open()) {
+		cout << "The log file can't be opened\n";
+		exit(1);
+	}
+}
+
 int main() {
+	open_log_file();
 	int quanta, switch_time;
 	buddy* memory = new buddy();
 	queue<process>all_process = read_input_file(quanta, switch_time, INPUT_FILE_NAME, memory);
 	queue<process>ready_queue;
+	process* current_process_occupies_the_processor = NULL;
 	int counter = 0;
 	while (!all_process.empty() || !ready_queue.empty()) {
 		add_new_processes_to_ready_queue(counter, all_process, ready_queue);
 		if (! ready_queue.empty()) {
-			if (ready_queue.front().id != ready_queue.back().id) {
-				counter += switch_time;
+			if (current_process_occupies_the_processor != NULL ) {
+				if (ready_queue.front().id != current_process_occupies_the_processor->id) {
+					counter = switching(counter, switch_time);
+				}
 			}
-			counter += ready_queue.front().run(quanta);
+			//log the queue to the file
+			print_queue(ready_queue);
+			current_process_occupies_the_processor = &ready_queue.front();
+			counter += ready_queue.front().run(quanta, counter) ;
 			if (ready_queue.front().is_finished()) {
 				//the process is finished
 				//log here
 				ready_queue.pop();
 			} else {
 				//log here for pause
+				// check for new processes to keep the order
+				add_new_processes_to_ready_queue(counter, all_process, ready_queue);
 				//put the process at the end of queue
 				ready_queue.push(ready_queue.front());
 				ready_queue.pop();

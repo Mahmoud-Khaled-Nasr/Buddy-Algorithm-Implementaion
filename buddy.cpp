@@ -2,6 +2,7 @@
 int buddy::MEMORY_SIZE = 1024;
 buddy::buddy() {
 	buildlog();
+	build(1,1024,1);
 }
 void buddy::build(int l, int r, int idx, int val) {
 	if (l == r) {

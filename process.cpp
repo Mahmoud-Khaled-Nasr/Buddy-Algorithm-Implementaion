@@ -16,7 +16,7 @@ bool process::should_hlt() {
 }
 
 bool process::is_arrival_time(int time) {
-	return (arrival_time == time);
+	return (arrival_time <= time);
 }
 
 bool process::can_allocate_mem() {
@@ -33,15 +33,24 @@ bool process::is_allocated_in_mem() {
 	return !(location.first == -1 && location.second == -1);
 }
 
-int process::run(int quanta) {
+int process::run(int quanta, int time) {
+	//the + 1 is to keep the output the same as the example
+	ofstream out;
+	out.open(LOG_FILE_NAME, fstream::app);
+	out << "Executing process " << id << "\t: started at " << time << ", \t";
 	if (run_time > quanta) {
 		run_time -= quanta;
-		return quanta;
+		out << "stopped at " << time + quanta << ", " << run_time << " remaining, memory startes at "
+			<< location.first << " and ends at " << location.second << endl;
+		return quanta ;
 	} else {
 		int temp = run_time;
 		run_time = 0;
-		return temp;
+		out << "finished at " << time + temp << " ,memory startes at "
+			<< location.first << " and ends at " << location.second << endl;
+		return temp ;
 	}
+	out.close();
 }
 
 bool process::is_finished() {

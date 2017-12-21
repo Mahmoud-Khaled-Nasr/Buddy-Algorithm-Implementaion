@@ -1,10 +1,12 @@
 #pragma once
 #include<string>
+#include<fstream>
 #include "buddy.h"
 
 using namespace std;
 
 #define MAX_NUMBER_OF_ALLOCATION_TRIES 5
+#define LOG_FILE_NAME "log.txt"
 
 class process {
 private:
@@ -22,7 +24,7 @@ public:
 	bool is_arrival_time(int time);
 	bool can_allocate_mem();
 	bool is_allocated_in_mem();
-	int run(int quanta);
+	int run(int quanta, int time);
 	bool is_finished();
 };
 
