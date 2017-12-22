@@ -4,9 +4,11 @@
 process::process(string id,int run_time, int arrival_time, int mem_size, buddy* memory) {
 	this->id = id;
 	this->run_time = run_time;
+	this->remaining_run_time = run_time;
 	this->arrival_time = arrival_time;
 	this->mem_size = mem_size;
 	this->memory = memory;
+	this->finish_time = -1;
 	no_space_in_mem = 0;
 	location = pair<int, int>(-1, -1);
 }
@@ -20,7 +22,9 @@ bool process::is_arrival_time(int time) {
 }
 
 bool process::can_allocate_mem() {
-	location = memory->allocate(mem_size);
+	if (location.first == -1 && location.second == -1) {
+		location = memory->allocate(mem_size);
+	}
 	if (location.first != -1 && location.second != -1) {
 		return true;
 	} else {
@@ -38,14 +42,14 @@ int process::run(int quanta, int time) {
 	ofstream out;
 	out.open(LOG_FILE_NAME, fstream::app);
 	out << "Executing process " << id << "\t: started at " << time << ", \t";
-	if (run_time > quanta) {
-		run_time -= quanta;
-		out << "stopped at " << time + quanta << ", " << run_time << " remaining, memory startes at "
+	if (remaining_run_time > quanta) {
+		remaining_run_time -= quanta;
+		out << "stopped at " << time + quanta << ", " << remaining_run_time << " remaining, memory startes at "
 			<< location.first << " and ends at " << location.second << endl;
 		return quanta ;
 	} else {
-		int temp = run_time;
-		run_time = 0;
+		int temp = remaining_run_time;
+		remaining_run_time = 0;
 		out << "finished at " << time + temp << " ,memory startes at "
 			<< location.first << " and ends at " << location.second << endl;
 		return temp ;
@@ -54,13 +58,23 @@ int process::run(int quanta, int time) {
 }
 
 bool process::is_finished() {
-	if (run_time == 0) {
-		memory->removeFromMemory(0, 1023, 1, location.first, location.second);
+	if (remaining_run_time == 0) {
+		memory->removeFromMemory(1, 1024, 1, location.first, location.second);
 		return true;
 	} else {
 		return false;
 	}
 
+}
+
+void process::log_hlting(int time) {
+	ofstream out;
+	out.open(LOG_FILE_NAME);
+	out << "Hlting process " << id << "\tat time " << time << endl;
+}
+
+void process::set_finish_time(int time) {
+	finish_time = time;
 }
 
 

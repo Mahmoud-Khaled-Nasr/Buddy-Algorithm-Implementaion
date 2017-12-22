@@ -8,6 +8,7 @@ using namespace std;
 
 #define INPUT_FILE_NAME "input.txt"
 #define LOG_FILE_NAME "log.txt"
+#define OUTPUT_FILE_NAME "output.txt"
 
 
 queue<process> read_input_file(int &quanta, int &switch_time, string file_name, buddy* memory) {
@@ -33,19 +34,9 @@ queue<process> read_input_file(int &quanta, int &switch_time, string file_name, 
 }
 
 void add_new_processes_to_ready_queue(int time, queue<process> &all_process, queue<process>& ready_queue) {
-	while (! all_process.empty()) {
-		if (! all_process.front().is_arrival_time(time)) {
-			return;
-		} else if ( all_process.front().can_allocate_mem()) {
-			ready_queue.push(all_process.front());
-			all_process.pop();
-		} else if (all_process.front().should_hlt () ) {
-			//hlting the process
-			all_process.pop();
-		} else {
-			all_process.push(all_process.front());
-			all_process.pop();
-		}
+	while (! all_process.empty() && all_process.front().is_arrival_time(time)) {
+		ready_queue.push(all_process.front());
+		all_process.pop();
 	}
 }
 
@@ -93,12 +84,31 @@ void open_log_file() {
 	}
 }
 
+bool smaller_than(process& l, process& r) {
+	return l.arrival_time < r.arrival_time;
+}
+
+void log_output_file(vector<process> finished_processes) {
+	sort(finished_processes.begin(), finished_processes.end(), smaller_than);
+	ofstream out;
+	out.open(OUTPUT_FILE_NAME);
+	out << "process_id\trun_time\tarrival_time\tfinish_time\tmem_size\tmem_start\tmem_end\n";
+	for (int i = 0; i < finished_processes.size(); i++) {
+		process temp = finished_processes[i];
+		out << temp.id << "\t" << temp.run_time << "\t" << temp.arrival_time << "\t"
+			<< temp.finish_time << "\t" << temp.mem_size << "\t" << temp.location.first << "\t"
+			<< temp.location.second << endl;
+	}
+	out.close();
+}
+
 int main() {
 	open_log_file();
 	int quanta, switch_time;
 	buddy* memory = new buddy();
 	queue<process>all_process = read_input_file(quanta, switch_time, INPUT_FILE_NAME, memory);
 	queue<process>ready_queue;
+	vector<process> finished_processes;
 	process* current_process_occupies_the_processor = NULL;
 	int counter = 0;
 	while (!all_process.empty() || !ready_queue.empty()) {
@@ -111,17 +121,27 @@ int main() {
 			}
 			//log the queue to the file
 			print_queue(ready_queue);
-			current_process_occupies_the_processor = &ready_queue.front();
-			counter += ready_queue.front().run(quanta, counter) ;
-			if (ready_queue.front().is_finished()) {
-				//the process is finished
-				//log here
+			//check for memory conditions
+			if (ready_queue.front().can_allocate_mem()) {
+				//run the process
+				current_process_occupies_the_processor = &ready_queue.front();
+				counter += ready_queue.front().run(quanta, counter);
+				if (ready_queue.front().is_finished()) {
+					//the process is finished
+					ready_queue.front().set_finish_time(counter);
+					finished_processes.push_back(ready_queue.front());
+					ready_queue.pop();
+				} else {
+					// check for new processes to keep the order
+					add_new_processes_to_ready_queue(counter, all_process, ready_queue);
+					//put the process at the end of queue
+					ready_queue.push(ready_queue.front());
+					ready_queue.pop();
+				}
+			} else if (ready_queue.front().should_hlt()) {
+				ready_queue.front().log_hlting(counter);
 				ready_queue.pop();
 			} else {
-				//log here for pause
-				// check for new processes to keep the order
-				add_new_processes_to_ready_queue(counter, all_process, ready_queue);
-				//put the process at the end of queue
 				ready_queue.push(ready_queue.front());
 				ready_queue.pop();
 			}
@@ -129,6 +149,6 @@ int main() {
 			counter++;
 		}
 	}
-
+	log_output_file(finished_processes);
 	delete memory;
 }
