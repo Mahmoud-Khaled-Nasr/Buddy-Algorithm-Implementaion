@@ -55,7 +55,7 @@ int process::run(int quanta, int time) {
 
 bool process::is_finished() {
 	if (run_time == 0) {
-		memory->removeFromMemory(1, 1024, 1, location.first, location.second);
+		memory->removeFromMemory(0, 1023, 1, location.first, location.second);
 		return true;
 	} else {
 		return false;

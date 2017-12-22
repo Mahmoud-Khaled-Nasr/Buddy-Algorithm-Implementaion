@@ -2,7 +2,7 @@
 int buddy::MEMORY_SIZE = 1024;
 buddy::buddy() {
 	buildlog();
-	build(1,1024,1);
+	build(0,MEMORY_SIZE-1,1);
 }
 void buddy::build(int l, int r, int idx, int val) {
 	if (l == r) {
@@ -20,7 +20,7 @@ void buddy::build(int l, int r, int idx, int val) {
 pair<int, int> buddy::allocate(int size) {
 	int a = 1;
 	while (a < size)a *= 2;
-	return getLocationInMemory(1, MEMORY_SIZE, 1, a);
+	return getLocationInMemory(0, MEMORY_SIZE-1, 1, a);
 }
 pair<int, int> buddy::getLocationInMemory(int l, int r, int idx, int size)
 {
