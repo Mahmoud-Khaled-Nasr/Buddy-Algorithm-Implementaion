@@ -33,19 +33,9 @@ queue<process> read_input_file(int &quanta, int &switch_time, string file_name, 
 }
 
 void add_new_processes_to_ready_queue(int time, queue<process> &all_process, queue<process>& ready_queue) {
-	while (! all_process.empty()) {
-		if (! all_process.front().is_arrival_time(time)) {
-			return;
-		} else if ( all_process.front().can_allocate_mem()) {
-			ready_queue.push(all_process.front());
-			all_process.pop();
-		} else if (all_process.front().should_hlt () ) {
-			//hlting the process
-			all_process.pop();
-		} else {
-			all_process.push(all_process.front());
-			all_process.pop();
-		}
+	while (! all_process.empty() && all_process.front().is_arrival_time(time)) {
+		ready_queue.push(all_process.front());
+		all_process.pop();
 	}
 }
 
@@ -111,17 +101,26 @@ int main() {
 			}
 			//log the queue to the file
 			print_queue(ready_queue);
-			current_process_occupies_the_processor = &ready_queue.front();
-			counter += ready_queue.front().run(quanta, counter) ;
-			if (ready_queue.front().is_finished()) {
-				//the process is finished
-				//log here
+			//check for memory conditions
+			if (ready_queue.front().can_allocate_mem()) {
+				//run the process
+				current_process_occupies_the_processor = &ready_queue.front();
+				counter += ready_queue.front().run(quanta, counter);
+				if (ready_queue.front().is_finished()) {
+					//the process is finished
+					ready_queue.pop();
+				} else {
+					//log here for pause
+					// check for new processes to keep the order
+					add_new_processes_to_ready_queue(counter, all_process, ready_queue);
+					//put the process at the end of queue
+					ready_queue.push(ready_queue.front());
+					ready_queue.pop();
+				}
+			} else if (ready_queue.front().should_hlt()) {
+				ready_queue.front().log_hlting(counter);
 				ready_queue.pop();
 			} else {
-				//log here for pause
-				// check for new processes to keep the order
-				add_new_processes_to_ready_queue(counter, all_process, ready_queue);
-				//put the process at the end of queue
 				ready_queue.push(ready_queue.front());
 				ready_queue.pop();
 			}

@@ -26,5 +26,6 @@ public:
 	bool is_allocated_in_mem();
 	int run(int quanta, int time);
 	bool is_finished();
+	void log_hlting(int time);
 };
 

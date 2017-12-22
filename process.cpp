@@ -20,7 +20,9 @@ bool process::is_arrival_time(int time) {
 }
 
 bool process::can_allocate_mem() {
-	location = memory->allocate(mem_size);
+	if (location.first == -1 && location.second == -1) {
+		location = memory->allocate(mem_size);
+	}
 	if (location.first != -1 && location.second != -1) {
 		return true;
 	} else {
@@ -61,6 +63,12 @@ bool process::is_finished() {
 		return false;
 	}
 
+}
+
+void process::log_hlting(int time) {
+	ofstream out;
+	out.open(LOG_FILE_NAME);
+	out << "Hlting process " << id << "\tat time " << time << endl;
 }
 
 
